@@ -12,5 +12,46 @@ echo 'Finished cloning'
 # Draw a picture/take notes on the directory structure that's set up after
 # getting to this point
 
+# Created grading-area and student-submission directories, which are 
+# removed and re-created each iteration
+
 # Then, add here code to compile and run, and do any post-processing of the
 # tests
+
+if [[ -f student-submission/ListExamples.java ]]
+then
+    echo "File found"
+else
+    echo "File not found"
+    exit
+fi
+
+cp TestListExamples.java grading-area
+cp student-submission/ListExamples.java grading-area
+cp -r lib grading-area
+
+cd grading-area
+javac -cp $CPATH *.java
+if [[ $? -ne 0 ]]
+then
+    echo "Could not compile student code"
+    exit 1
+fi
+
+java -cp $CPATH org.junit.runner.JUnitCore TestListExamples > junit-output.txt
+
+lastline=$(cat junit-output.txt | tail -n 2 | head -n 1)
+firstword=$(echo $lastline | awk '{print $1}')
+
+if [[ $firstword = 'OK' ]]
+then
+    echo "Your score is 100.00%"
+    exit
+fi
+
+tests=$(echo $lastline | awk -F'[, ]' '{print $3}')
+failures=$(echo $lastline | awk -F'[, ]' '{print $6}')
+successes=$((tests - failures))
+score=$(echo "scale=2; $successes / $tests * 100" | bc)
+
+echo "Your score is $score%"
